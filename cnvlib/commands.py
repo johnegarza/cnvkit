@@ -140,7 +140,7 @@ def _cmd_batch(args):
                             args.output_dir, args.male_reference, args.scatter,
                             args.diagram, args.rscript_path, args.count_reads,
                             args.drop_low_coverage, args.seq_method, args.segment_method, procs_per_bam,
-                            args.cluster)
+                            args.cluster, args.fasta)
     else:
         logging.info("No tumor/test samples (but %d normal/control samples) "
                      "specified on the command line.",
@@ -370,7 +370,7 @@ def _cmd_autobin(args):
     fields = autobin.do_autobin(bam_fname, args.method, tgt_arr, access_arr,
                                 args.bp_per_bin, args.target_min_size,
                                 args.target_max_size, args.antitarget_min_size,
-                                args.antitarget_max_size)
+                                args.antitarget_max_size, args.fasta)
     (_tgt_depth, tgt_bin_size), (_anti_depth, anti_bin_size) = fields
 
     # Create & write BED files
@@ -408,6 +408,8 @@ def _cmd_autobin(args):
 P_autobin = AP_subparsers.add_parser('autobin', help=_cmd_autobin.__doc__)
 P_autobin.add_argument('bams', nargs='+',
         help="""Sample BAM file(s) to test for target coverage""")
+P_autobin.add_argument('-f', '--fasta', metavar="FILENAME",
+        help="Reference genome, FASTA format (e.g. UCSC hg19.fa)")
 P_autobin.add_argument('-m', '--method',
         choices=('hybrid', 'amplicon', 'wgs'), default='hybrid',
         help="""Sequencing protocol: hybridization capture ('hybrid'), targeted
@@ -458,7 +460,7 @@ do_coverage = public(coverage.do_coverage)
 def _cmd_coverage(args):
     """Calculate coverage in the given regions from BAM read depths."""
     pset = coverage.do_coverage(args.interval, args.bam_file, args.count,
-                                args.min_mapq, args.processes)
+                                args.min_mapq, args.processes, args.fasta)
     if not args.output:
         # Create an informative but unique name for the coverage output file
         bambase = core.fbase(args.bam_file)
@@ -476,6 +478,8 @@ def _cmd_coverage(args):
 P_coverage = AP_subparsers.add_parser('coverage', help=_cmd_coverage.__doc__)
 P_coverage.add_argument('bam_file', help="Mapped sequence reads (.bam)")
 P_coverage.add_argument('interval', help="Intervals (.bed or .list)")
+P_coverage.add_argument('-f', '--fasta', metavar="FILENAME",
+        help="Reference genome, FASTA format (e.g. UCSC hg19.fa)")
 P_coverage.add_argument('-c', '--count', action='store_true',
         help="""Get read depths by counting read midpoints within each bin.
                 (An alternative algorithm).""")
